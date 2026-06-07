@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react"
 import { Sun, Moon, Menu, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Separator } from "@workspace/ui/components/separator"
+import Link from "next/link"
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -84,16 +85,18 @@ export default function Header() {
             </motion.div>
           )}
           
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <Button
-              className="bg-primary-color text-on-primary rounded-full font-bold shadow-md shadow-primary-color/10 hover:bg-primary-container h-10 px-6 cursor-pointer"
+          <Link href="/get-started" className="cursor-pointer">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              Get Started
-            </Button>
-          </motion.div>
+              <Button
+                className="bg-primary-color text-on-primary rounded-full font-bold shadow-md shadow-primary-color/10 hover:bg-primary-container h-10 px-6 cursor-pointer"
+              >
+                Get Started
+              </Button>
+            </motion.div>
+          </Link>
         </div>
 
         {/* Mobile controls */}
@@ -146,12 +149,14 @@ export default function Header() {
             </div>
             <Separator className="bg-outline-variant/30 dark:bg-outline/10 my-1" />
             <div className="flex flex-col gap-3">
-              <Button
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 bg-primary-color text-on-primary rounded-2xl font-bold shadow-md shadow-primary-color/10 hover:bg-primary-container cursor-pointer"
-              >
-                Get Started
-              </Button>
+              <Link href="/get-started" className="w-full">
+                <Button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 bg-primary-color text-on-primary rounded-2xl font-bold shadow-md shadow-primary-color/10 hover:bg-primary-container cursor-pointer"
+                >
+                  Get Started
+                </Button>
+              </Link>
             </div>
           </motion.div>
         )}
