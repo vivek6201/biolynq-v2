@@ -2,15 +2,26 @@
   "name": "@workspace/utils",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
+    "@types/node": "^20.19.41",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "axios": "^1.17.0",
-    "eslint": "^9"
+    "eslint": "^9",
+    "zod": "^4.4.3"
   },
-  "exports":{
-    ".": "./src/index.ts"
+  "exports": {
+    ".": "./src/index.ts",
+    "./api/*": "./src/api/*.ts",
+    "./validations/*": "./src/validations/*.ts",
+    "./types/*": "./src/types/*.ts"
   },
   "keywords": [],
   "author": "",

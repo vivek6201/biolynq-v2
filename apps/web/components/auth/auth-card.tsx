@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import { EmailStep } from "./email-step"
 import { OtpStep } from "./otp-step"
@@ -8,6 +9,8 @@ import { UsernameStep } from "./username-step"
 import { RedirectStep } from "./redirect-step"
 import { cn } from "@workspace/ui/lib/utils"
 import { AuthStep } from "@/lib/constants"
+import type { OnboardingResponse, VerifyOtpResponse, GoogleAuthPayload } from "@workspace/utils/types/auth"
+import { useSessionStore } from "@/store/session-store"
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -25,10 +28,53 @@ const slideVariants = {
 }
 
 export function AuthCard() {
-  const [step, setStep] = useState<AuthStep>(AuthStep.EMAIL)
+  const searchParams = useSearchParams()
+  const stepParam = searchParams.get("step")
+  const tempUserIdParam = searchParams.get("temp_user_id")
+  const registeredParam = searchParams.get("registered")
+
+  const [step, setStep] = useState<AuthStep>(() => {
+    if (registeredParam === "true" && searchParams.get("session_id")) {
+      return AuthStep.REDIRECT
+    }
+    if (stepParam === "USERNAME" || (registeredParam === "false" && tempUserIdParam)) {
+      return AuthStep.USERNAME
+    }
+    return AuthStep.EMAIL
+  })
   const [direction, setDirection] = useState(1) // 1 = forward, -1 = backward
   const [email, setEmail] = useState("")
   const [username, setUsername] = useState("")
+  const [tempUserId, setTempUserId] = useState(() => tempUserIdParam || "")
+
+  // Handle popup relay if opened as a popup for Google Auth
+  React.useEffect(() => {
+    const tempUserIdVal = searchParams.get("temp_user_id")
+    const registeredVal = searchParams.get("registered")
+    const sessionIdVal = searchParams.get("session_id")
+
+    if (window.opener) {
+      if (registeredVal === "false" && tempUserIdVal) {
+        const payload = {
+          type: "GOOGLE_AUTH_CALLBACK",
+          sessionId: null,
+          registered: false,
+          tempUserId: tempUserIdVal,
+        }
+        window.opener.postMessage(payload, window.location.origin)
+        window.close()
+      } else if (registeredVal === "true" && sessionIdVal) {
+        const payload = {
+          type: "GOOGLE_AUTH_CALLBACK",
+          sessionId: sessionIdVal,
+          registered: true,
+          tempUserId: null,
+        }
+        window.opener.postMessage(payload, window.location.origin)
+        window.close()
+      }
+    }
+  }, [searchParams])
 
   const handleNextEmail = (enteredEmail: string) => {
     setEmail(enteredEmail)
@@ -36,20 +82,33 @@ export function AuthCard() {
     setStep(AuthStep.OTP)
   }
 
-  const handleNextOtp = () => {
+  const handleNextOtp = async (res: VerifyOtpResponse) => {
+    if (res.temp_user_id) {
+      setTempUserId(res.temp_user_id)
+    }
+
     setDirection(1)
-    setStep(AuthStep.USERNAME)
+    if (res.registered) {
+      setStep(AuthStep.REDIRECT)
+    } else {
+      setStep(AuthStep.USERNAME)
+    }
   }
 
-  const handleGoogleLogin = () => {
-    setEmail("google-user@example.com")
+  const handleGoogleLogin = async (payload: GoogleAuthPayload) => {
     setDirection(1)
-    setStep(AuthStep.USERNAME)
+    if (payload.registered && payload.sessionId) {
+      setStep(AuthStep.REDIRECT)
+    } else if (payload.tempUserId) {
+      setTempUserId(payload.tempUserId)
+      setStep(AuthStep.USERNAME)
+    }
   }
 
-  const handleNextUsername = (chosenUsername: string) => {
+  const handleNextUsername = async (res: OnboardingResponse, chosenUsername: string) => {
     setUsername(chosenUsername)
     setDirection(1)
+    await useSessionStore.getState().fetchSession()
     setStep(AuthStep.REDIRECT)
   }
 
@@ -81,26 +140,27 @@ export function AuthCard() {
               }}
               className="w-full"
             >
-              {step === "EMAIL" && (
+              {step === AuthStep.EMAIL && (
                 <EmailStep
                   onNextEmail={handleNextEmail}
                   onGoogleLogin={handleGoogleLogin}
                 />
               )}
-              {step === "OTP" && (
+              {step === AuthStep.OTP && (
                 <OtpStep
                   email={email}
                   onNextOtp={handleNextOtp}
                   onBack={handleBackToEmail}
                 />
               )}
-              {step === "USERNAME" && (
+              {step === AuthStep.USERNAME && (
                 <UsernameStep
+                  tempUserId={tempUserId}
                   onNextUsername={handleNextUsername}
                   initialUsername={username}
                 />
               )}
-              {step === "REDIRECT" && (
+              {step === AuthStep.REDIRECT && (
                 <RedirectStep
                   username={username}
                 />

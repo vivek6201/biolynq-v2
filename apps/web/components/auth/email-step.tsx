@@ -1,15 +1,19 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Input } from "@workspace/ui/components/input"
 import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
 import { Mail, ArrowRight } from "lucide-react"
 import { GoogleIcon } from "@workspace/ui/components/icons"
 
+import { sendOtp } from "@workspace/utils/api/auth"
+import { API_URL } from "@workspace/utils/api/index"
+import type { GoogleAuthPayload } from "@workspace/utils/types/auth"
+
 interface EmailStepProps {
   onNextEmail: (email: string) => void
-  onGoogleLogin: () => void
+  onGoogleLogin: (payload: GoogleAuthPayload) => void
 }
 
 export function EmailStep({ onNextEmail, onGoogleLogin }: EmailStepProps) {
@@ -17,6 +21,39 @@ export function EmailStep({ onNextEmail, onGoogleLogin }: EmailStepProps) {
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const popupRef = useRef<Window | null>(null)
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Cleanup popup poll timer
+  const clearPollTimer = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }, [])
+
+  // Listen for postMessage from the popup
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      // Security: only accept messages from our own origin
+      if (event.origin !== window.location.origin) return
+      if (event.data?.type !== "GOOGLE_AUTH_CALLBACK") return
+
+      clearPollTimer()
+      setIsGoogleLoading(false)
+      popupRef.current = null
+      onGoogleLogin(event.data as GoogleAuthPayload)
+    },
+    [onGoogleLogin, clearPollTimer]
+  )
+
+  useEffect(() => {
+    window.addEventListener("message", handleMessage)
+    return () => {
+      window.removeEventListener("message", handleMessage)
+      clearPollTimer()
+    }
+  }, [handleMessage, clearPollTimer])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,19 +69,60 @@ export function EmailStep({ onNextEmail, onGoogleLogin }: EmailStepProps) {
 
     setError("")
     setIsSubmitting(true)
-    // Simulate brief API delay
-    setTimeout(() => {
-      setIsSubmitting(false)
-      onNextEmail(email)
-    }, 800)
+    
+    sendOtp(email)
+      .then((res) => {
+        setIsSubmitting(false)
+        if (res.success) {
+          onNextEmail(email)
+        } else {
+          setError(res.message || "Failed to send code. Please try again.")
+        }
+      })
+      .catch(() => {
+        setIsSubmitting(false)
+        setError("An error occurred. Please try again.")
+      })
   }
 
   const handleGoogleClick = () => {
+    // If a popup is already open, focus it
+    if (popupRef.current && !popupRef.current.closed) {
+      popupRef.current.focus()
+      return
+    }
+
     setIsGoogleLoading(true)
-    setTimeout(() => {
+    setError("")
+
+    // Center the popup on screen
+    const width = 500
+    const height = 600
+    const left = window.screenX + (window.outerWidth - width) / 2
+    const top = window.screenY + (window.outerHeight - height) / 2
+
+    const popup = window.open(
+      `${API_URL}/auth/google/login`,
+      "google-auth-popup",
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+    )
+
+    if (!popup) {
+      setError("Popup was blocked. Please allow popups for this site.")
       setIsGoogleLoading(false)
-      onGoogleLogin()
-    }, 1200)
+      return
+    }
+
+    popupRef.current = popup
+
+    // Poll to detect if user manually closed the popup
+    pollTimerRef.current = setInterval(() => {
+      if (popup.closed) {
+        clearPollTimer()
+        setIsGoogleLoading(false)
+        popupRef.current = null
+      }
+    }, 500)
   }
 
   return (
@@ -138,3 +216,4 @@ export function EmailStep({ onNextEmail, onGoogleLogin }: EmailStepProps) {
     </div>
   )
 }
+

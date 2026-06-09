@@ -7,16 +7,20 @@ import { Label } from "@workspace/ui/components/label"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 import { validateUsernameFormat } from "@/lib/utils"
+import { checkUsername, onboarding } from "@workspace/utils/api/auth"
+import type { OnboardingResponse } from "@workspace/utils/types/auth"
 
 interface UsernameStepProps {
-  onNextUsername: (username: string) => void
+  tempUserId: string
+  onNextUsername: (res: OnboardingResponse, username: string) => void
   initialUsername?: string
 }
 
-export function UsernameStep({ onNextUsername, initialUsername = "" }: UsernameStepProps) {
+export function UsernameStep({ tempUserId, onNextUsername, initialUsername = "" }: UsernameStepProps) {
   const [username, setUsername] = useState(initialUsername)
   const [status, setStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
 
   // Simulate API call for username check
   const checkAvailability = useCallback((val: string) => {
@@ -38,19 +42,17 @@ export function UsernameStep({ onNextUsername, initialUsername = "" }: UsernameS
     }, 0)
     
     delay = setTimeout(() => {
-      // Simple mock logic: usernames ending in "1", "2", "3" or "admin", "test" are "taken"
-      const lower = val.toLowerCase()
-      const isTaken = 
-        lower.endsWith("1") || 
-        lower.endsWith("2") || 
-        lower.endsWith("3") || 
-        ["admin", "test", "biolynq", "root", "support"].includes(lower)
-
-      if (isTaken) {
-        setStatus("taken")
-      } else {
-        setStatus("available")
-      }
+      checkUsername(val)
+        .then((res) => {
+          if (res.success) {
+            setStatus("available")
+          } else {
+            setStatus("taken")
+          }
+        })
+        .catch(() => {
+          setStatus("invalid")
+        })
     }, 600)
 
     return () => {
@@ -71,10 +73,21 @@ export function UsernameStep({ onNextUsername, initialUsername = "" }: UsernameS
     if (status !== "available") return
 
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
-      onNextUsername(username)
-    }, 800)
+    setSubmitError("")
+    
+    onboarding(username, tempUserId)
+      .then((res) => {
+        setIsSubmitting(false)
+        if (res.success) {
+          onNextUsername(res.data, username)
+        } else {
+          setSubmitError(res.message || "Failed to create account. Please try again.")
+        }
+      })
+      .catch(() => {
+        setIsSubmitting(false)
+        setSubmitError("An error occurred while creating your account.")
+      })
   }
 
   return (
@@ -161,6 +174,12 @@ export function UsernameStep({ onNextUsername, initialUsername = "" }: UsernameS
             )}
           </div>
         </div>
+
+        {submitError && (
+          <p className="text-xs font-semibold text-rose-500 text-center">
+            {submitError}
+          </p>
+        )}
 
         <Button
           type="submit"

@@ -1,11 +1,14 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { motion } from "motion/react"
 import { Button } from "@workspace/ui/components/button"
 import Link from "next/link"
+import { useSession } from "@/hooks/use-session"
 
 export default function CtaSection() {
+  const { isAuthenticated } = useSession()
+
   return (
     <section className="py-24 overflow-hidden bg-white dark:bg-slate-950">
       <div className="max-w-container-max mx-auto px-margin-desktop">
@@ -24,18 +27,33 @@ export default function CtaSection() {
               Stop guessing. Start growing. The most powerful digital presence tool is just a click away.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/get-started">
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <Button
-                    className="px-10 py-6 bg-white hover:bg-slate-100 text-primary-color rounded-full font-bold shadow-xl cursor-pointer h-auto text-base"
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                   >
-                    Get Started Now
-                  </Button>
-                </motion.div>
-              </Link>
+                    <Button
+                      className="px-10 py-6 bg-white hover:bg-slate-100 text-primary-color rounded-full font-bold shadow-xl cursor-pointer h-auto text-base"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  </motion.div>
+                </Link>
+              ) : (
+                <Link href="/get-started">
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <Button
+                      className="px-10 py-6 bg-white hover:bg-slate-100 text-primary-color rounded-full font-bold shadow-xl cursor-pointer h-auto text-base"
+                    >
+                      Get Started Now
+                    </Button>
+                  </motion.div>
+                </Link>
+              )}
               
               <motion.div
                 whileHover={{ scale: 1.03 }}

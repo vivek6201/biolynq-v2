@@ -5,10 +5,12 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@workspace/ui/components/
 import { Button } from "@workspace/ui/components/button"
 import { Label } from "@workspace/ui/components/label"
 import { ArrowLeft, RefreshCw } from "lucide-react"
+import { verifyOtp, sendOtp } from "@workspace/utils/api/auth"
+import type { VerifyOtpResponse } from "@workspace/utils/types/auth"
 
 interface OtpStepProps {
   email: string
-  onNextOtp: (otp: string) => void
+  onNextOtp: (res: VerifyOtpResponse) => void
   onBack: () => void
 }
 
@@ -42,29 +44,40 @@ export function OtpStep({ email, onNextOtp, onBack }: OtpStepProps) {
     setIsSubmitting(true)
     setError("")
     
-    // Simulate API check
-    setTimeout(() => {
-      setIsSubmitting(false)
-      if (code === "000000" || code === "123456" || code.length === 6) {
-        // Any 6 digits is accepted in this mock flow
-        onNextOtp(code)
-      } else {
-        setError("Invalid verification code. Try '123456'.")
-      }
-    }, 1000)
+    verifyOtp(email, code)
+      .then((res) => {
+        setIsSubmitting(false)
+        if (res.success) {
+          onNextOtp(res.data)
+        } else {
+          setError(res.message || "Invalid verification code. Please try again.")
+        }
+      })
+      .catch(() => {
+        setIsSubmitting(false)
+        setError("An error occurred during verification.")
+      })
   }
 
   const handleResend = () => {
     if (resendTimer > 0 || isResending) return
     setIsResending(true)
+    setError("")
     
-    // Simulate resend API delay
-    setTimeout(() => {
-      setIsResending(false)
-      setResendTimer(30)
-      setOtp("")
-      setError("")
-    }, 800)
+    sendOtp(email)
+      .then((res) => {
+        setIsResending(false)
+        if (res.success) {
+          setResendTimer(30)
+          setOtp("")
+        } else {
+          setError(res.message || "Failed to resend code.")
+        }
+      })
+      .catch(() => {
+        setIsResending(false)
+        setError("An error occurred. Please try again.")
+      })
   }
 
   return (

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { Metadata } from "next"
 import Link from "next/link"
 import { AuthCard } from "@/components/auth/auth-card"
@@ -38,7 +39,13 @@ export default function GetStartedPage() {
       {/* Main Form Area */}
       <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 py-8">
         <h1 className="sr-only">Get Started on Biolynq</h1>
-        <AuthCard />
+        <Suspense fallback={
+          <div className="glass-card shadow-2xl rounded-3xl p-10 max-w-md w-full h-80 flex items-center justify-center border border-slate-200/40 dark:border-white/10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-color dark:border-secondary-fixed-dim" />
+          </div>
+        }>
+          <AuthCard />
+        </Suspense>
       </main>
 
       {/* Footer */}

@@ -1,7 +1,46 @@
-import React from 'react'
+import { notFound } from "next/navigation"
+import type { Metadata } from "next"
+import { getPublicProfile } from "@workspace/utils/api/users"
+import { PublicProfileContent } from "@/components/public/public-profile-content"
 
-export default function page() {
-  return (
-    <div>page</div>
-  )
+interface PageProps {
+  params: Promise<{
+    username: string
+  }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { username } = await params
+  try {
+    const res = await getPublicProfile(username)
+    if (res.success && res.data) {
+      const profile = res.data
+      return {
+        title: `${profile.display_name || profile.username} (@${profile.username}) | Biolynq`,
+        description:
+          profile.bio ||
+          `Check out ${
+            profile.display_name || profile.username
+          }'s links and social networks on Biolynq.`,
+      }
+    }
+  } catch {}
+  return {
+    title: "User Profile | Biolynq",
+    description: "Check out this user's links and social networks on Biolynq.",
+  }
+}
+
+export default async function Page({ params }: PageProps) {
+  const { username } = await params
+
+  try {
+    const res = await getPublicProfile(username)
+    if (!res.success || !res.data) {
+      notFound()
+    }
+    return <PublicProfileContent profile={res.data} />
+  } catch {
+    notFound()
+  }
 }
