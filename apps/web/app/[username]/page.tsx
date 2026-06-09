@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import { cache } from "react"
 import { getPublicProfile } from "@workspace/utils/api/users"
 import { PublicProfileContent } from "@/components/public/public-profile-content"
+
+// Memoize public profile requests at the request level to avoid double-fetching/double-tracking
+const getPublicProfileCached = cache(getPublicProfile)
 
 interface PageProps {
   params: Promise<{
@@ -12,7 +16,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { username } = await params
   try {
-    const res = await getPublicProfile(username)
+    const res = await getPublicProfileCached(username)
     if (res.success && res.data) {
       const profile = res.data
       return {
@@ -35,7 +39,7 @@ export default async function Page({ params }: PageProps) {
   const { username } = await params
 
   try {
-    const res = await getPublicProfile(username)
+    const res = await getPublicProfileCached(username)
     if (!res.success || !res.data) {
       notFound()
     }

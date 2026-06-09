@@ -1,5 +1,5 @@
+import { ClientDashboardLayout } from '@/components/dashboard/common/client-dashboard-layout'
 import React from 'react'
-import { ClientDashboardLayout } from '@/components/dashboard/client-dashboard-layout'
 
 export const metadata = {
   title: "Dashboard | Biolynq",

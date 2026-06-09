@@ -62,3 +62,17 @@ export async function apiRequest<T>(
     }
   }
 }
+
+/**
+ * Server-side API request wrapper using Axios.
+ * Dedicated utility for server component contexts.
+ */
+export async function apiRequestServer<T>(
+  endpoint: string,
+  method: AxiosRequestConfig["method"],
+  body?: AxiosRequestConfig["data"],
+  params?: AxiosRequestConfig["params"],
+  headers?: AxiosRequestConfig["headers"]
+): Promise<ApiResponse<T>> {
+  return apiRequest<T>(endpoint, method, body, params, headers)
+}

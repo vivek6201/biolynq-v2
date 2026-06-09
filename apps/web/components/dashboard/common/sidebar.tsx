@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { BarChart3, Link2, Settings, LogOut, User, Sun, Moon } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 import { useSession } from "@/hooks/use-session"
@@ -15,11 +15,12 @@ export default function Sidebar() {
   const pathname = usePathname()
   const { user, profile, clearSession } = useSession()
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
+  const router = useRouter()
 
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  const handleLogout = async () => {
+    await clearSession()
+    router.refresh()
+  }
 
   const navItems = [
     {
@@ -91,7 +92,7 @@ export default function Sidebar() {
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           className="flex items-center space-x-3 w-full px-4 py-2.5 rounded-xl text-xs font-semibold justify-start text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100/50 dark:hover:bg-white/5 shadow-none transition-all duration-200"
         >
-          {mounted && resolvedTheme === "dark" ? (
+          {resolvedTheme === "dark" ? (
             <>
               <Sun className="h-3.5 w-3.5" />
               <span>Light Mode</span>
@@ -105,7 +106,7 @@ export default function Sidebar() {
         </Button>
         <Button
           variant="destructive"
-          onClick={clearSession}
+          onClick={handleLogout}
           className="flex items-center space-x-3 w-full px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
         >
           <LogOut className="h-3.5 w-3.5" />
