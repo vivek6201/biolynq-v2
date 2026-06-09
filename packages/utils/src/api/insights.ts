@@ -1,4 +1,4 @@
-import { API_URL, apiRequestServer } from "."
+import { API_URL, apiRequest } from "."
 import { LinkStatsResponse, OverviewResponse, DemographicsResponse } from "../types/analytics"
 
 const endpoint = {
@@ -7,11 +7,11 @@ const endpoint = {
     analyticsBreakdown: `${API_URL}/analytics/breakdown`,
 }
 
-export const getOverview = (headers?: Record<string, string>) => 
-    apiRequestServer<OverviewResponse>(endpoint.overview, "GET", undefined, undefined, headers)
+export const getOverview = () => 
+    apiRequest<OverviewResponse>(endpoint.overview, "GET")
 
-export const getLinkStats = (headers?: Record<string, string>) => 
-    apiRequestServer<LinkStatsResponse[]>(endpoint.linkStats, "GET", undefined, undefined, headers)
+export const getLinkStats = () => 
+    apiRequest<LinkStatsResponse[]>(endpoint.linkStats, "GET")
 
-export const getDemographics = (headers?: Record<string, string>) => 
-    apiRequestServer<DemographicsResponse>(endpoint.analyticsBreakdown, "GET", undefined, undefined, headers)
+export const getDemographics = () => 
+    apiRequest<DemographicsResponse>(endpoint.analyticsBreakdown, "GET")

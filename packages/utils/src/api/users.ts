@@ -1,4 +1,4 @@
-import { API_URL, apiRequest, apiRequestServer } from ".";
+import { API_URL, apiRequest } from ".";
 import { UserProfileResponse, UserResponse } from "../types/users";
 
 const endpoint = {
@@ -9,7 +9,8 @@ const endpoint = {
 
 export const getUser = () => apiRequest<UserResponse>(endpoint.me, "GET")
 
-export const getProfile = () => apiRequest<UserProfileResponse>(endpoint.profile, "GET")
+export const getProfile = () => 
+    apiRequest<UserProfileResponse>(endpoint.profile, "GET")
 
 export const getPublicProfile = (username: string) => 
-    apiRequestServer<UserProfileResponse>(endpoint.publicProfile(username), "GET")
+    apiRequest<UserProfileResponse>(endpoint.publicProfile(username), "GET")

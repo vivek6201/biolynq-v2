@@ -52,6 +52,21 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
+export function AnalyticsChartSkeleton() {
+  return (
+    <Card className="glass-card p-6 rounded-3xl border border-slate-200/40 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 h-[460px] flex flex-col justify-between animate-pulse shadow-none ring-0">
+      <div className="flex justify-between items-center pb-6">
+        <div className="flex items-center space-x-2">
+          <Calendar className="h-4 w-4 text-slate-300 dark:text-slate-700" />
+          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-48"></div>
+        </div>
+        <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-64"></div>
+      </div>
+      <div className="flex-1 bg-slate-100 dark:bg-slate-800/40 rounded-2xl"></div>
+    </Card>
+  )
+}
+
 export function AnalyticsChart({ data, isLoading }: AnalyticsChartProps) {
   const [filter, setFilter] = useState<"all" | "views" | "clicks">("all")
 
@@ -77,18 +92,7 @@ export function AnalyticsChart({ data, isLoading }: AnalyticsChartProps) {
   }
 
   if (isLoading) {
-    return (
-      <Card className="glass-card p-6 rounded-3xl border border-slate-200/40 dark:border-white/5 bg-white/60 dark:bg-slate-900/40 h-[460px] flex flex-col justify-between animate-pulse shadow-none ring-0">
-        <div className="flex justify-between items-center pb-6">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4 text-slate-300 dark:text-slate-700" />
-            <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-48"></div>
-          </div>
-          <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded w-64"></div>
-        </div>
-        <div className="flex-1 bg-slate-100 dark:bg-slate-800/40 rounded-2xl"></div>
-      </Card>
-    )
+    return <AnalyticsChartSkeleton />
   }
 
   return (
@@ -142,7 +146,7 @@ export function AnalyticsChart({ data, isLoading }: AnalyticsChartProps) {
 
       {/* Recharts Container */}
       <div className="h-[320px] w-full mt-2 select-none">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 1, height: 1 }}>
           <AreaChart
             data={chartData}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}

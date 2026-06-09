@@ -1,7 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios"
 import { ApiErrorResponse, ApiResponse, ApiSuccessResponse } from "../types/api"
 
-
 export const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 /**
@@ -22,6 +21,17 @@ export async function apiRequest<T>(
   headers?: AxiosRequestConfig["headers"]
 ): Promise<ApiResponse<T>> {
   try {
+    const isServer = typeof window === "undefined"
+
+    if(isServer){
+      const {cookies} = await import("next/headers")
+      const cookieStore = (await cookies()).getAll()
+      headers = {
+        ...headers,
+        Cookie: cookieStore.map(cookie => `${cookie.name}=${cookie.value}`).join('; '),
+      }
+    }
+
     const response = await axios({
       url: endpoint,
       method,
@@ -61,18 +71,4 @@ export async function apiRequest<T>(
       },
     }
   }
-}
-
-/**
- * Server-side API request wrapper using Axios.
- * Dedicated utility for server component contexts.
- */
-export async function apiRequestServer<T>(
-  endpoint: string,
-  method: AxiosRequestConfig["method"],
-  body?: AxiosRequestConfig["data"],
-  params?: AxiosRequestConfig["params"],
-  headers?: AxiosRequestConfig["headers"]
-): Promise<ApiResponse<T>> {
-  return apiRequest<T>(endpoint, method, body, params, headers)
 }

@@ -1,5 +1,4 @@
 import React from "react"
-import { cookies } from "next/headers"
 import { getOverview, getLinkStats, getDemographics } from "@workspace/utils/api/insights"
 import { OverviewCards } from "@/components/dashboard/insights/overview-cards"
 import { AnalyticsChart } from "@/components/dashboard/insights/analytics-chart"
@@ -9,15 +8,11 @@ import { InsightsHeader } from "@/components/dashboard/insights/insights-header"
 import { AlertCircle } from "lucide-react"
 
 export default async function InsightsPage() {
-  const cookieStore = await cookies()
-  const sessionId = cookieStore.get("session_id")?.value
-  const cookieHeader = sessionId ? `session_id=${sessionId}` : ""
-
   try {
     const [overviewRes, demographicsRes, linkStatsRes] = await Promise.all([
-      getOverview({ Cookie: cookieHeader }),
-      getDemographics({ Cookie: cookieHeader }),
-      getLinkStats({ Cookie: cookieHeader }),
+      getOverview(),
+      getDemographics(),
+      getLinkStats(),
     ])
 
     if (!overviewRes.success || !demographicsRes.success || !linkStatsRes.success) {
