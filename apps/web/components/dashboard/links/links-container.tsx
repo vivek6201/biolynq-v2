@@ -112,17 +112,6 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
     })
   }
 
-  // ── Mock click metric ──────────────────────────────────────────────────
-  const getMockClicks = (id: string) => {
-    if (id.startsWith("temp_")) return "—"
-    let hash = 0
-    for (let i = 0; i < id.length; i++) {
-      hash = id.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    const clicks = Math.abs(hash % 4800) + 120
-    return clicks >= 1000 ? `${(clicks / 1000).toFixed(1)}k Clicks` : `${clicks} Clicks`
-  }
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-6">
@@ -179,7 +168,6 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
                       handleDeleteLink={handleDeleteLink}
                       setActiveEditLink={setActiveEditLink}
                       setIsEditorOpen={setIsEditorOpen}
-                      getMockClicks={getMockClicks}
                     />
                   )
                 })

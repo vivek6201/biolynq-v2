@@ -22,7 +22,6 @@ interface SortableLinkCardProps {
   handleDeleteLink: (linkId: string) => void
   setActiveEditLink: (link: LinkResponse | null) => void
   setIsEditorOpen: (isOpen: boolean) => void
-  getMockClicks: (id: string) => string
 }
 
 interface DragItem {
@@ -40,7 +39,6 @@ export function SortableLinkCard({
   handleDeleteLink,
   setActiveEditLink,
   setIsEditorOpen,
-  getMockClicks,
 }: SortableLinkCardProps) {
   const ref = useRef<HTMLDivElement>(null)
   const isPending = link.id.startsWith("temp_")
@@ -162,7 +160,7 @@ export function SortableLinkCard({
           <div className="flex items-center space-x-4">
             <span className="flex items-center space-x-1.5">
               <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
-              <span>{getMockClicks(link.id)}</span>
+              <span>{link.clicks}</span>
             </span>
             <span className="flex items-center space-x-1.5">
               <ImageIcon className="h-3.5 w-3.5 text-slate-400" />

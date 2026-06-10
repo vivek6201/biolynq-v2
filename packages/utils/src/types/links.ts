@@ -3,6 +3,7 @@ export interface LinkResponse {
     title: string
     description: string
     url: string
+    clicks: number
     icon_url: string
     position: number
     is_active: boolean
