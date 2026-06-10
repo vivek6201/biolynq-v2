@@ -15,6 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@workspace/ui/components/form"
+import { Input } from "@workspace/ui/components/input"
 
 interface LinkEditorDialogProps {
   isOpen: boolean
@@ -132,11 +133,11 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
                     Link Title
                   </FormLabel>
                   <FormControl>
-                    <input
+                    <Input
                       {...field}
                       type="text"
                       placeholder="e.g. Portfolio Website"
-                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 text-xs font-semibold focus:outline-hidden focus:border-primary-color dark:focus:border-secondary-fixed-dim"
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 text-xs font-semibold focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-hidden focus:border-primary-color dark:focus:border-secondary-fixed-dim"
                       disabled={isSubmitting}
                     />
                   </FormControl>
@@ -155,11 +156,11 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
                     Target URL
                   </FormLabel>
                   <FormControl>
-                    <input
+                    <Input
                       {...field}
                       type="text"
                       placeholder="e.g. https://mywebsite.com"
-                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 text-xs font-semibold focus:outline-hidden focus:border-primary-color dark:focus:border-secondary-fixed-dim"
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 text-xs font-semibold focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-hidden focus:border-primary-color dark:focus:border-secondary-fixed-dim"
                       disabled={isSubmitting}
                     />
                   </FormControl>

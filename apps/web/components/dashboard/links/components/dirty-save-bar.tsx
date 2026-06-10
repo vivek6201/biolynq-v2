@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { AlertTriangle, Check, Loader2, RotateCcw, Save } from "lucide-react"
+import { AlertTriangle, Loader2, RotateCcw, Save } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
 interface DirtySaveBarProps {
@@ -43,10 +43,7 @@ export function DirtySaveBar({
         ? "bg-red-100 dark:bg-red-900/40 text-red-500"
         : "bg-amber-50 dark:bg-amber-900/30 text-amber-500"
       }`}>
-        {saveError
-          ? <AlertTriangle className="h-3.5 w-3.5" />
-          : <AlertTriangle className="h-3.5 w-3.5" />
-        }
+        <AlertTriangle className="h-3.5 w-3.5" />
       </div>
 
       {/* Message */}

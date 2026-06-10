@@ -12,6 +12,8 @@ interface PublicProfileContentProps {
 }
 
 export function PublicProfileContent({ profile }: PublicProfileContentProps) {
+  const standardLinks = (profile.links || []).filter((link) => !link.is_social)
+
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 flex flex-col justify-between py-12 px-4 select-none overflow-hidden radial-gradient-decorations">
       {/* Background radial soft lights */}
@@ -28,8 +30,8 @@ export function PublicProfileContent({ profile }: PublicProfileContentProps) {
 
         {/* Links List */}
         <div className="w-full space-y-4">
-          {profile.links && profile.links.length > 0 ? (
-            profile.links.map((link) => (
+          {standardLinks.length > 0 ? (
+            standardLinks.map((link) => (
               <LinkCard key={link.id} link={link} />
             ))
           ) : (

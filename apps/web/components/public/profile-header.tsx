@@ -1,14 +1,35 @@
 "use client"
 
 import React, { useState } from "react"
-import { Share2, Briefcase, User } from "lucide-react"
-import { InstagramIcon } from "@workspace/ui/components/icons"
+import { Share2, Globe, Mail } from "lucide-react"
+import {
+  InstagramIcon,
+  YoutubeIcon,
+  TwitterIcon,
+  GithubIcon,
+  LinkedinIcon,
+} from "@workspace/ui/components/icons"
 import { motion, AnimatePresence } from "motion/react"
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import type { UserProfileResponse } from "@workspace/utils/types/users"
+import Link from "next/link"
+import { API_URL } from "@workspace/utils/api/index"
+import { cn } from "@workspace/ui/lib/utils"
 
 interface ProfileHeaderProps {
   profile: UserProfileResponse
+}
+
+const getSocialIcon = (urlStr: string) => {
+  if (!urlStr) return Globe
+  const url = urlStr.toLowerCase()
+  if (url.includes("instagram.com")) return InstagramIcon
+  if (url.includes("youtube.com") || url.includes("youtu.be")) return YoutubeIcon
+  if (url.includes("twitter.com") || url.includes("x.com")) return TwitterIcon
+  if (url.includes("github.com")) return GithubIcon
+  if (url.includes("linkedin.com")) return LinkedinIcon
+  if (url.includes("mail") || url.includes("@")) return Mail
+  return Globe
 }
 
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
@@ -23,6 +44,8 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       console.error("Failed to copy URL:", err)
     }
   }
+
+  const socialLinks = (profile.links || []).filter((l) => l.is_social && l.is_active)
 
   return (
     <div className="flex flex-col items-center text-center space-y-8 w-full">
@@ -80,7 +103,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
         </div>
 
         {/* Social Row / Quick Connect Icons */}
-        <div className="flex justify-center items-center gap-3 pt-2">
+        <div className="flex flex-wrap justify-center items-center gap-3 pt-2">
           {/* Copy Link / Share Action */}
           <div className="relative">
             <Button
@@ -105,24 +128,36 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             </AnimatePresence>
           </div>
 
-          {/* Standard Social Link Icons */}
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="rounded-full bg-white dark:bg-slate-900 border-slate-200/50 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm"
-            onClick={() => window.open(`https://instagram.com`, "_blank")}
-          >
-            <InstagramIcon className="h-4 w-4" />
-          </Button>
-
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="rounded-full bg-white dark:bg-slate-900 border-slate-200/50 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm"
-            onClick={() => window.open(`https://google.com`, "_blank")}
-          >
-            <Briefcase className="h-4 w-4" />
-          </Button>
+          {/* Dynamic Social Link Icons */}
+          {socialLinks.map((link) => {
+            const Icon = getSocialIcon(link.url)
+            return (
+              <Link
+                key={link.id}
+                href={`${API_URL}/visit/${link.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={link.title}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "icon-sm" }),
+                  "rounded-full bg-white dark:bg-slate-900 border-slate-200/50 dark:border-white/10 text-slate-600 dark:text-slate-350 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm flex items-center justify-center"
+                )}
+              >
+                {link.icon_url ? (
+                  <img
+                    src={link.icon_url}
+                    alt={link.title}
+                    className="h-4 w-4 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
+              </Link>
+            )
+          })}
         </div>
       </div>
     </div>

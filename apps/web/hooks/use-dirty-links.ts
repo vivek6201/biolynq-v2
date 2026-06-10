@@ -15,11 +15,18 @@ export type { LinkChange } from "./use-dirty-links.logic"
 
 export function useDirtyLinks(initialLinks: LinkResponse[]) {
   const [links, setLinks] = useState<LinkResponse[]>(initialLinks)
+  const [savedLinks, setSavedLinks] = useState<LinkResponse[]>(initialLinks)
   const [changeLog, dispatch] = useReducer(changeLogReducer, [] as LinkChange[])
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const isDirty = changeLog.length > 0
+
+  // Sync state if initial server props update
+  useEffect(() => {
+    setLinks(initialLinks)
+    setSavedLinks(initialLinks)
+  }, [initialLinks])
 
   // ── Warn before refresh / tab-close when there are unsaved changes ─────────
   useEffect(() => {
@@ -47,12 +54,11 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
 
   const queueCreateLink = useCallback((data: Partial<LinkResponse>) => {
     const tempId = makeTempId()
-    setLinks((prev) => {
-      const newLink = buildNewLink(data, nextPosition(prev), tempId)
-      dispatch({ kind: "enqueue", change: { kind: "create", tempId, data: newLink } })
-      return [...prev, newLink]
-    })
-  }, [])
+    const pos = nextPosition(links)
+    const newLink = buildNewLink(data, pos, tempId)
+    dispatch({ kind: "enqueue", change: { kind: "create", tempId, data: newLink } })
+    setLinks((prev) => [...prev, newLink])
+  }, [links])
 
   /** Unified "save from dialog" — create or update depending on context */
   const queueSaveLink = useCallback(
@@ -67,6 +73,30 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
     setLinks((prev) => prev.filter((l) => l.id !== linkId))
     dispatch({ kind: "enqueue", change: { kind: "delete", id: linkId } })
   }, [])
+
+  const moveLinkCard = useCallback((dragIndex: number, hoverIndex: number) => {
+    setLinks((prev) => {
+      const sorted = [...prev].sort((a, b) => a.position - b.position)
+      const [dragged] = sorted.splice(dragIndex, 1)
+      if (dragged) {
+        sorted.splice(hoverIndex, 0, dragged)
+      }
+      return sorted.map((l, idx) => ({ ...l, position: idx + 1 }))
+    })
+  }, [])
+
+  const commitReorder = useCallback(() => {
+    links.forEach((link) => {
+      dispatch({
+        kind: "enqueue",
+        change: {
+          kind: "update",
+          id: link.id,
+          data: { position: link.position },
+        },
+      })
+    })
+  }, [links])
 
   // ── Batch save ────────────────────────────────────────────────────────────
 
@@ -94,25 +124,26 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
       )
       .map((r) => r.value!)
 
+    let updatedLinks = links
     if (idMap.length > 0) {
       const lookup = new Map(idMap.map((m) => [m.tempId, m.realId]))
-      setLinks((prev) =>
-        prev.map((l) => (lookup.has(l.id) ? { ...l, id: lookup.get(l.id)! } : l))
-      )
+      updatedLinks = links.map((l) => (lookup.has(l.id) ? { ...l, id: lookup.get(l.id)! } : l))
+      setLinks(updatedLinks)
     }
 
+    setSavedLinks(updatedLinks)
     dispatch({ kind: "clear" })
     setIsSaving(false)
     return true
-  }, [changeLog, isDirty])
+  }, [changeLog, isDirty, links])
 
   // ── Discard all pending changes ───────────────────────────────────────────
 
   const discardAll = useCallback(() => {
-    setLinks(initialLinks)
+    setLinks(savedLinks)
     dispatch({ kind: "clear" })
     setSaveError(null)
-  }, [initialLinks])
+  }, [savedLinks])
 
   // ── Derived sorted list (stable reference) ────────────────────────────────
 
@@ -132,6 +163,8 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
     queueToggleActive,
     queueSaveLink,
     queueDeleteLink,
+    moveLinkCard,
+    commitReorder,
     saveAll,
     discardAll,
   }
