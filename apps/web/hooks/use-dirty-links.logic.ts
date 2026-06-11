@@ -152,5 +152,6 @@ export function buildNewLink(
     position,
     is_active: data.is_active ?? true,
     is_social: data.is_social ?? false,
+    clicks: data.clicks ?? 0
   }
 }
