@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef } from "react"
+import React, { useRef, useState } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import {
   GripVertical,
@@ -8,6 +8,9 @@ import {
   Image as ImageIcon,
   Pencil,
   Trash2,
+  Link2,
+  Copy,
+  Check,
 } from "lucide-react"
 import { LinkResponse } from "@workspace/utils/types/links"
 import { cn } from "@workspace/ui/lib/utils"
@@ -22,6 +25,7 @@ interface SortableLinkCardProps {
   handleDeleteLink: (linkId: string) => void
   setActiveEditLink: (link: LinkResponse | null) => void
   setIsEditorOpen: (isOpen: boolean) => void
+  handleShortenLink: (link: LinkResponse) => void
 }
 
 interface DragItem {
@@ -39,9 +43,21 @@ export function SortableLinkCard({
   handleDeleteLink,
   setActiveEditLink,
   setIsEditorOpen,
+  handleShortenLink,
 }: SortableLinkCardProps) {
   const ref = useRef<HTMLDivElement>(null)
   const isPending = link.id.startsWith("temp_")
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (link.short_url) {
+      navigator.clipboard.writeText(link.short_url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: any }>({
     accept: "LINK_CARD",
@@ -123,14 +139,43 @@ export function SortableLinkCard({
                 </span>
               )}
             </div>
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-slate-400 hover:text-primary-color dark:hover:text-secondary-fixed-dim truncate block font-semibold transition-colors"
-            >
-              {link.url}
-            </a>
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-slate-400 hover:text-primary-color dark:hover:text-secondary-fixed-dim truncate block font-semibold transition-colors"
+              >
+                Destination: {link.url}
+              </a>
+              {link.short_url && (
+                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-semibold bg-emerald-50/60 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/20 px-2.5 py-1 rounded-xl w-fit max-w-full">
+                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    Short Link:
+                  </span>
+                  <a
+                    href={link.short_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-slate-600 dark:text-slate-300 truncate"
+                  >
+                    {link.short_url}
+                  </a>
+                  <button
+                    onClick={handleCopy}
+                    className="p-1 rounded-md hover:bg-emerald-100/60 dark:hover:bg-emerald-900/20 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                    title="Copy short link"
+                  >
+                    {copied ? (
+                      <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Visibility Toggle */}
@@ -170,6 +215,17 @@ export function SortableLinkCard({
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
+            {!isPending && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleShortenLink(link)}
+                className="p-1.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                title="Create Short Link"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon-sm"

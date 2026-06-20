@@ -5,6 +5,7 @@ import { Plus } from "lucide-react"
 import { LinkResponse } from "@workspace/utils/types/links"
 import { UserProfileResponse } from "@workspace/utils/types/users"
 import { LinkEditorDialog } from "./components/link-editor-dialog"
+import { ShortLinkDialog } from "./components/short-link-dialog"
 import { MobilePreview } from "./components/mobile-preview"
 import { DirtySaveBar } from "./components/dirty-save-bar"
 import { useDirtyLinks } from "@/hooks/use-dirty-links"
@@ -29,6 +30,7 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [deleteLinkIdConfirm, setDeleteLinkIdConfirm] = useState<string | null>(null)
   const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false)
+  const [shortenLink, setShortenLink] = useState<LinkResponse | null>(null)
 
   // All link mutation state is managed by the dirty-state hook
   const {
@@ -45,6 +47,7 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
     commitReorder,
     saveAll,
     discardAll,
+    updateLinkLocally,
   } = useDirtyLinks(initialLinks)
 
   // ── Search filter ───────────────────────────────────────────────────────
@@ -112,6 +115,28 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
     })
   }
 
+  const handleShortenLink = (link: LinkResponse) => {
+    setShortenLink(link)
+  }
+
+  const handleShortenSuccess = (shortUrl: string, slug: string) => {
+    if (shortenLink) {
+      updateLinkLocally(shortenLink.id, {
+        short_url: shortUrl,
+      })
+      toast.success("Short link updated successfully!")
+    }
+  }
+
+  const handleShortenDeleteSuccess = () => {
+    if (shortenLink) {
+      updateLinkLocally(shortenLink.id, {
+        short_url: "",
+      })
+      toast.success("Short link deleted successfully!")
+    }
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-6">
@@ -168,6 +193,7 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
                       handleDeleteLink={handleDeleteLink}
                       setActiveEditLink={setActiveEditLink}
                       setIsEditorOpen={setIsEditorOpen}
+                      handleShortenLink={handleShortenLink}
                     />
                   )
                 })
@@ -193,6 +219,17 @@ export function LinksDashboardContainer({ initialProfile, initialLinks }: LinksD
           }}
           onSave={handleSaveLink}
           link={activeEditLink}
+        />
+
+        {/* Short Link Dialog */}
+        <ShortLinkDialog
+          isOpen={shortenLink !== null}
+          onClose={() => setShortenLink(null)}
+          linkId={shortenLink?.id || ""}
+          linkTitle={shortenLink?.title || ""}
+          shortUrl={shortenLink?.short_url}
+          onSuccess={handleShortenSuccess}
+          onDeleteSuccess={handleShortenDeleteSuccess}
         />
 
         {/* Delete Confirmation Alert Dialog */}

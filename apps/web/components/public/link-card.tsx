@@ -64,7 +64,7 @@ export function LinkCard({ link }: LinkCardProps) {
 
   return (
     <Link
-      href={`${API_URL}/visit/${link.id}`}
+      href={link.short_url || `${API_URL}/visit/${link.id}`}
       target="_blank"
       rel="noopener noreferrer"
       className="group flex items-center justify-between p-4 bg-white dark:bg-slate-900/60 border border-slate-200/40 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 w-full hover:-translate-y-0.5"

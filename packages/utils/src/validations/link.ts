@@ -17,6 +17,14 @@ export const linkValidation = z.object({
     position: z.number().int("Position must be an integer").default(0),
     is_active: z.boolean().default(true),
     is_social: z.boolean().default(false),
+    shorten: z.boolean().optional(),
+    short_alias: z.string()
+        .max(50, "Alias cannot exceed 50 characters")
+        .optional()
+        .refine(
+            (val) => !val || val.length >= 3,
+            { message: "Alias must be at least 3 characters" }
+        ),
 })
 
 export type LinkValidation = z.infer<typeof linkValidation>

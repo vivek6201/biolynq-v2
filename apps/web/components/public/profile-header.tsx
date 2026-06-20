@@ -134,7 +134,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
             return (
               <Link
                 key={link.id}
-                href={`${API_URL}/visit/${link.id}`}
+                href={link.short_url || `${API_URL}/visit/${link.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 title={link.title}

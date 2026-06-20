@@ -8,4 +8,5 @@ export interface LinkResponse {
     position: number
     is_active: boolean
     is_social: boolean
+    short_url?: string
 }

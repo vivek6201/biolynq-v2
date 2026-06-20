@@ -5,6 +5,7 @@ const endpoint = {
     links: `${API_URL}/links/`,
     link: (linkId: string) => `${API_URL}/links/${linkId}`,
     visit: (linkId: string) => `${API_URL}/visit/${linkId}`,
+    shortLink: (linkId: string) => `${API_URL}/short/${linkId}`
 }
 
 export const visitLink = async (linkId: string) => 
@@ -24,3 +25,15 @@ export const createLink = (data: Partial<LinkResponse>) =>
 
 export const deleteLink = (linkId: string) => 
     apiRequest<void>(endpoint.link(linkId), "DELETE")
+
+export const createShortLink = (linkId: string, slug?: string) => 
+    apiRequest<{ short_url: string; slug: string }>(endpoint.shortLink(linkId), "POST", { slug })
+
+export const updateShortLink = (linkId: string, oldSlug: string, newSlug: string) => 
+    apiRequest<{ short_url: string; slug: string }>(`${endpoint.shortLink(linkId)}/${oldSlug}`, "PUT", { slug: newSlug })
+
+export const deleteShortLink = (linkId: string, slug: string) => 
+    apiRequest<void>(`${endpoint.shortLink(linkId)}/${slug}`, "DELETE")
+
+export const checkShortLinkSlug = (slug: string) => 
+    apiRequest<void>(`${API_URL}/short/check-slug`, "POST", { slug })

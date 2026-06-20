@@ -52,17 +52,17 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
     dispatch({ kind: "enqueue", change: { kind: "update", id: existing.id, data } })
   }, [])
 
-  const queueCreateLink = useCallback((data: Partial<LinkResponse>) => {
+  const queueCreateLink = useCallback((data: Partial<LinkResponse> & { shorten?: boolean; short_alias?: string }) => {
     const tempId = makeTempId()
     const pos = nextPosition(links)
     const newLink = buildNewLink(data, pos, tempId)
-    dispatch({ kind: "enqueue", change: { kind: "create", tempId, data: newLink } })
+    dispatch({ kind: "enqueue", change: { kind: "create", tempId, data: { ...newLink, shorten: data.shorten, short_alias: data.short_alias } } })
     setLinks((prev) => [...prev, newLink])
   }, [links])
 
   /** Unified "save from dialog" — create or update depending on context */
   const queueSaveLink = useCallback(
-    (data: Partial<LinkResponse>, existingLink: LinkResponse | null) => {
+    (data: Partial<LinkResponse> & { shorten?: boolean; short_alias?: string }, existingLink: LinkResponse | null) => {
       if (existingLink) queueUpdateLink(existingLink, data)
       else queueCreateLink(data)
     },
@@ -117,17 +117,17 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
       return false
     }
 
-    // Replace temp IDs with real server IDs returned by creates
-    const idMap = results
-      .filter((r): r is PromiseFulfilledResult<{ kind: "created"; tempId: string; realId: string } | null> =>
+    // Replace temp IDs with real server links returned by creates
+    const createdResults = results
+      .filter((r): r is PromiseFulfilledResult<{ kind: "created"; tempId: string; realLink: LinkResponse } | null> =>
         r.status === "fulfilled" && r.value?.kind === "created"
       )
       .map((r) => r.value!)
 
     let updatedLinks = links
-    if (idMap.length > 0) {
-      const lookup = new Map(idMap.map((m) => [m.tempId, m.realId]))
-      updatedLinks = links.map((l) => (lookup.has(l.id) ? { ...l, id: lookup.get(l.id)! } : l))
+    if (createdResults.length > 0) {
+      const lookup = new Map(createdResults.map((m) => [m.tempId, m.realLink]))
+      updatedLinks = links.map((l) => (lookup.has(l.id) ? lookup.get(l.id)! : l))
       setLinks(updatedLinks)
     }
 
@@ -152,6 +152,11 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
     [links]
   )
 
+  const updateLinkLocally = useCallback((linkId: string, data: Partial<LinkResponse>) => {
+    setLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, ...data } : l)))
+    setSavedLinks((prev) => prev.map((l) => (l.id === linkId ? { ...l, ...data } : l)))
+  }, [])
+
   return {
     links,
     sortedLinks,
@@ -167,5 +172,6 @@ export function useDirtyLinks(initialLinks: LinkResponse[]) {
     commitReorder,
     saveAll,
     discardAll,
+    updateLinkLocally,
   }
 }

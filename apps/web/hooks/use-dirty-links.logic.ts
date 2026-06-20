@@ -7,7 +7,7 @@ export type CreateChange = {
   kind: "create"
   /** Temporary client-only ID assigned before the server returns a real one */
   tempId: string
-  data: Omit<LinkResponse, "id">
+  data: Omit<LinkResponse, "id"> & { shorten?: boolean; short_alias?: string }
 }
 
 export type UpdateChange = {
@@ -87,7 +87,7 @@ export function changeLogReducer(log: LinkChange[], action: ChangeLogAction): Li
           data: {
             ...(log[createIdx] as CreateChange).data,
             ...change.data,
-          } as Omit<LinkResponse, "id">,
+          } as Omit<LinkResponse, "id"> & { shorten?: boolean; short_alias?: string },
         }
         return next
       }
@@ -106,14 +106,19 @@ export function changeLogReducer(log: LinkChange[], action: ChangeLogAction): Li
 
 export async function executeChange(
   change: LinkChange
-): Promise<{ kind: "created"; tempId: string; realId: string } | null> {
+): Promise<{ kind: "created"; tempId: string; realLink: LinkResponse } | null> {
   switch (change.kind) {
     case "create": {
-      const res = await createLink(change.data)
+      const { shorten, short_alias, ...rest } = change.data
+      const res = await createLink({
+        ...rest,
+        shorten,
+        short_alias: short_alias || undefined,
+      } as any)
       if (!res.success || !res.data) {
         throw new Error(res.message ?? "Failed to create link")
       }
-      return { kind: "created", tempId: change.tempId, realId: res.data.id }
+      return { kind: "created", tempId: change.tempId, realLink: res.data }
     }
     case "update": {
       const res = await updateLink(change.id, change.data)
@@ -152,6 +157,7 @@ export function buildNewLink(
     position,
     is_active: data.is_active ?? true,
     is_social: data.is_social ?? false,
-    clicks: data.clicks ?? 0
+    clicks: data.clicks ?? 0,
+    short_url: data.short_url,
   }
 }

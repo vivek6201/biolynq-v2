@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect } from "react"
-import { X, Loader2 } from "lucide-react"
+import React, { useEffect, useState } from "react"
+import { X, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { LinkResponse } from "@workspace/utils/types/links"
 import { useForm } from "react-hook-form"
@@ -20,7 +20,7 @@ import { Input } from "@workspace/ui/components/input"
 interface LinkEditorDialogProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: Partial<LinkResponse>) => Promise<void>
+  onSave: (data: Partial<LinkResponse> & { shorten?: boolean; short_alias?: string }) => Promise<void>
   link?: LinkResponse | null // If present, editing; otherwise creating
 }
 
@@ -34,7 +34,9 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
       is_social: false,
       is_active: true,
       position: 0,
-      icon_url: ""
+      icon_url: "",
+      shorten: false,
+      short_alias: ""
     }
   })
 
@@ -49,7 +51,9 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
           is_social: link.is_social ?? false,
           is_active: link.is_active ?? true,
           position: link.position ?? 0,
-          icon_url: link.icon_url || ""
+          icon_url: link.icon_url || "",
+          shorten: false,
+          short_alias: ""
         })
       } else {
         form.reset({
@@ -59,11 +63,64 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
           is_social: false,
           is_active: true,
           position: 0,
-          icon_url: ""
+          icon_url: "",
+          shorten: false,
+          short_alias: ""
         })
       }
     }
   }, [link, isOpen, form])
+
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle")
+  const shorten = form.watch("shorten")
+  const shortAlias = form.watch("short_alias")
+
+  // Check alias availability reactively as they type
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (!shorten || !shortAlias || shortAlias.length < 3) {
+      setSlugStatus("idle")
+      return
+    }
+
+    if (/[^a-z0-9_-]/.test(shortAlias)) {
+      setSlugStatus("invalid")
+      return
+    }
+
+    const tChecking = setTimeout(() => {
+      setSlugStatus("checking")
+    }, 0)
+
+    const delay = setTimeout(async () => {
+      try {
+        const { checkShortLinkSlug } = await import("@workspace/utils/api/links")
+        const res = await checkShortLinkSlug(shortAlias)
+        if (res.success) {
+          setSlugStatus("available")
+          form.clearErrors("short_alias")
+        } else {
+          setSlugStatus("taken")
+          form.setError("short_alias", {
+            type: "manual",
+            message: res.message || "Short alias is already taken."
+          })
+        }
+      } catch (err: any) {
+        setSlugStatus("taken")
+        form.setError("short_alias", {
+          type: "manual",
+          message: err?.message || "Alias is already taken."
+        })
+      }
+    }, 600)
+
+    return () => {
+      clearTimeout(tChecking)
+      clearTimeout(delay)
+    }
+  }, [shorten, shortAlias, isOpen, form])
 
   if (!isOpen) return null
 
@@ -75,6 +132,16 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
     }
 
     try {
+      if (values.shorten && values.short_alias) {
+        if (slugStatus !== "available") {
+          form.setError("short_alias", {
+            type: "manual",
+            message: "Please choose an available short alias."
+          })
+          return
+        }
+      }
+
       await onSave({
         ...values,
         url: formattedUrl,
@@ -240,6 +307,79 @@ export function LinkEditorDialog({ isOpen, onClose, onSave, link }: LinkEditorDi
               />
 
             </div>
+ 
+            {/* Shorten Options (Only for new links) */}
+            {!link && (
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/5">
+                <FormField
+                  control={form.control}
+                  name="shorten"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-3 cursor-pointer select-none space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value || false}
+                          onChange={field.onChange}
+                          className="h-4 w-4 rounded-lg border-slate-300 text-primary-color focus:ring-primary-color dark:border-white/10"
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
+                        Shorten URL (Create Short Link)
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+
+                 {form.watch("shorten") && (
+                  <FormField
+                    control={form.control}
+                    name="short_alias"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <FormLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Short Alias (Optional)
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative flex items-center">
+                            <Input
+                              {...field}
+                              onChange={(e) => {
+                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "")
+                                field.onChange(val)
+                              }}
+                              value={field.value || ""}
+                              type="text"
+                              placeholder="e.g. portfolio-alias"
+                              className="w-full pr-10 px-4 py-2.5 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 text-xs font-semibold focus-visible:ring-0 focus-visible:ring-offset-0 focus:outline-hidden focus:border-primary-color dark:focus:border-secondary-fixed-dim"
+                              disabled={isSubmitting}
+                            />
+                            <div className="absolute right-3 flex items-center">
+                              {slugStatus === "checking" && (
+                                <Loader2 className="h-4 w-4 text-primary-color dark:text-emerald-400 animate-spin" />
+                              )}
+                              {slugStatus === "available" && shortAlias && shortAlias.length >= 3 && (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              )}
+                              {(slugStatus === "taken" || slugStatus === "invalid") && shortAlias && shortAlias.length >= 3 && (
+                                <XCircle className="h-4 w-4 text-rose-500" />
+                              )}
+                            </div>
+                          </div>
+                        </FormControl>
+                        {slugStatus === "available" && shortAlias && shortAlias.length >= 3 && (
+                          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pl-1 mt-1">
+                            🎉 Short link alias is available!
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-white/5">
