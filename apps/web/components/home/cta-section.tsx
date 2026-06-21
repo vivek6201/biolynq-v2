@@ -4,10 +4,11 @@ import React, { useState, useEffect } from "react"
 import { motion } from "motion/react"
 import { Button } from "@workspace/ui/components/button"
 import Link from "next/link"
-import { useSession } from "@/hooks/use-session"
+import { useSessionStore } from "@/store/session-store"
 
 export default function CtaSection() {
-  const { isAuthenticated } = useSession()
+  const { user } = useSessionStore()
+  const isAuthenticated = !!user
 
   return (
     <section className="py-24 overflow-hidden bg-white dark:bg-slate-950">

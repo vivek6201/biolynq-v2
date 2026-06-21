@@ -46,6 +46,13 @@ export async function apiRequest<T>(
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<ApiErrorResponse>
       
+      // If unauthorized (401) and on a protected route, force-redirect to login page
+      if (axiosError.response?.status === 401) {
+        if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
+          window.location.href = `/get-started?redirect=${encodeURIComponent(window.location.pathname)}`
+        }
+      }
+
       // If the backend returned a formatted error response, return it directly
       if (axiosError.response?.data) {
         return axiosError.response.data
