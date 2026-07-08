@@ -5,7 +5,7 @@ import type { UserProfileResponse } from "@workspace/utils/types/users"
 import { ThemeToggle } from "./theme-toggle"
 import { ProfileHeader } from "./profile-header"
 import { LinkCard } from "./link-card"
-import { NewsletterForm } from "./newsletter-form"
+// import { NewsletterForm } from "./newsletter-form"
 
 interface PublicProfileContentProps {
   profile: UserProfileResponse
@@ -42,7 +42,7 @@ export function PublicProfileContent({ profile }: PublicProfileContentProps) {
         </div>
 
         {/* Newsletter Subscription Form Card */}
-        <NewsletterForm />
+        {/* <NewsletterForm /> */}
       </main>
 
       {/* Footer Branding & Links */}
