@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    const clientIp = request.ip || request.headers.get("x-forwarded-for") || ""
+    const clientIp = request.headers.get("x-forwarded-for") || ""
     const userAgent = request.headers.get("user-agent") || ""
     const referer = request.headers.get("referer") || ""
 
@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
   if (isAuthRoute && sessionId) {
     // Verify session is valid before redirecting from auth page
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
-    const clientIp = request.ip || request.headers.get("x-forwarded-for") || ""
+    const clientIp = request.headers.get("x-forwarded-for") || ""
     const userAgent = request.headers.get("user-agent") || ""
     const referer = request.headers.get("referer") || ""
 
