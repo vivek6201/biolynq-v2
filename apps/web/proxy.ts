@@ -20,6 +20,10 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
+    const clientIp = request.ip || request.headers.get("x-forwarded-for") || ""
+    const userAgent = request.headers.get("user-agent") || ""
+    const referer = request.headers.get("referer") || ""
+
     // Verify session with the backend API
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
     try {
@@ -27,6 +31,9 @@ export async function proxy(request: NextRequest) {
         method: "GET",
         headers: {
           Cookie: `session_id=${sessionId}`,
+          "X-Forwarded-For": clientIp,
+          "User-Agent": userAgent,
+          "Referer": referer,
         },
       })
 
@@ -47,11 +54,18 @@ export async function proxy(request: NextRequest) {
   if (isAuthRoute && sessionId) {
     // Verify session is valid before redirecting from auth page
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+    const clientIp = request.ip || request.headers.get("x-forwarded-for") || ""
+    const userAgent = request.headers.get("user-agent") || ""
+    const referer = request.headers.get("referer") || ""
+
     try {
       const response = await fetch(`${apiUrl}/users/`, {
         method: "GET",
         headers: {
           Cookie: `session_id=${sessionId}`,
+          "X-Forwarded-For": clientIp,
+          "User-Agent": userAgent,
+          "Referer": referer,
         },
       })
 

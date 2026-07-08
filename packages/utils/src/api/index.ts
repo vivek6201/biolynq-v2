@@ -24,11 +24,18 @@ export async function apiRequest<T>(
     const isServer = typeof window === "undefined"
 
     if(isServer){
-      const {cookies} = await import("next/headers")
+      const {cookies, headers: nextHeaders} = await import("next/headers")
       const cookieStore = (await cookies()).getAll()
+      const clientIp = (await nextHeaders()).get("x-forwarded-for") || ""
+      const userAgent = (await nextHeaders()).get("user-agent") || ""
+      const referer = (await nextHeaders()).get("referer") || ""
+      
       headers = {
         ...headers,
         Cookie: cookieStore.map(cookie => `${cookie.name}=${cookie.value}`).join('; '),
+        "X-Forwarded-For": clientIp,
+        "User-Agent": userAgent,
+        "Referer": referer,
       }
     }
 
